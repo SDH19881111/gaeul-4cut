@@ -18,6 +18,10 @@ python -m http.server 5195
 
 이 폴더를 그대로 GitHub Pages 또는 Netlify에 올리면 된다 (빌드 과정 없음).
 
+## 구글 드라이브 자동 저장 (선택)
+
+완성본을 선생님 드라이브로 자동 업로드한다. Apps Script를 한 번 배포하고 태블릿마다 연결한다. → [drive/SETUP.md](drive/SETUP.md)
+
 ## 구조
 
 | 파일 | 역할 |
@@ -28,6 +32,8 @@ python -m http.server 5195
 | `js/shapes.js` | 단풍잎·은행잎·도토리·코스모스 등 직접 그린 장식 |
 | `js/filters.js` | 원본·필름톤·앰버·빈티지 (픽셀 직접 계산, iOS 사파리 대응) |
 | `js/compose.js` | 4컷 + 프레임 + 필터 + 날짜 합성 (결과 1200px 폭 PNG) |
+| `js/drive.js` | 드라이브 연결 설정(기기별 localStorage)·업로드 |
+| `drive/Code.gs` | 드라이브 저장용 Apps Script (선생님 계정에 배포) |
 | `js/effects.js` | 저장 화면 낙엽 효과(2초), 로고 장식 |
 
 ## 실기기 테스트 체크

@@ -4,6 +4,7 @@ import { FRAMES, getFrame } from './frames.js';
 import { FILTERS } from './filters.js';
 import { render, filteredPhoto, ensureFonts, toBlob, clearCache } from './compose.js';
 import { playLeaves, drawLogoLeaves } from './effects.js';
+import { getDrive, setDrive, isValidUrl, readSetupFromHash, setupLink, ping, upload } from './drive.js';
 
 const $ = (sel) => document.querySelector(sel);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -369,6 +370,10 @@ async function enterSave() {
   if (state.resultUrl) URL.revokeObjectURL(state.resultUrl);
   state.resultUrl = URL.createObjectURL(blob);
   state.resultFile = new File([blob], fileName(), { type: 'image/png' });
+  // 드라이브용은 JPEG (PNG는 필름 노이즈 때문에 7MB 안팎 → 교실 와이파이에서 느림)
+  state.driveFile = getDrive()
+    ? new File([await toBlob(canvas, 'image/jpeg', 0.92)], fileName().replace(/\.png$/, '.jpg'), { type: 'image/jpeg' })
+    : null;
   $('#result-img').src = state.resultUrl;
   btn.disabled = false;
   btn.textContent = '저장하기';
@@ -379,7 +384,40 @@ async function enterSave() {
     $('#save-hint').hidden = false;
   }
   playLeaves($('#leaf-fx'));
+  sendToDrive();
 }
+
+/* ---------------- 드라이브 자동 저장 ---------------- */
+
+// 같은 사진·꾸미기 조합은 한 번만 올린다 (다시 꾸미기 → 그대로 완성 시 중복 방지)
+const uploaded = new Set();
+const designKey = () => [...state.shots.map((s) => s.id), state.frameId, state.filterId, state.showDate].join('|');
+
+function setDriveStatus(kind, text) {
+  const box = $('#drive-status');
+  box.hidden = !kind;
+  box.className = `drive-status ${kind || ''}`;
+  $('#drive-status-text').textContent = text || '';
+  $('#btn-drive-retry').hidden = kind !== 'fail';
+}
+
+async function sendToDrive() {
+  const cfg = getDrive();
+  const file = state.driveFile;
+  if (!cfg || !file) return setDriveStatus(null);
+  const key = designKey();
+  if (uploaded.has(key)) return setDriveStatus('ok', '☁️ 드라이브에 저장됨 ✓');
+  setDriveStatus('busy', '☁️ 드라이브에 올리는 중…');
+  try {
+    await upload(cfg, file);
+    uploaded.add(key);
+    if (state.driveFile === file) setDriveStatus('ok', '☁️ 드라이브에 저장됨 ✓');
+  } catch (e) {
+    if (state.driveFile === file) setDriveStatus('fail', `드라이브 저장 실패: ${e.message}`);
+  }
+}
+
+$('#btn-drive-retry').addEventListener('click', sendToDrive);
 
 async function save() {
   const file = state.resultFile;
@@ -410,13 +448,96 @@ $('#btn-deco-again').addEventListener('click', () => {
 $('#btn-restart').addEventListener('click', () => {
   state.shots = [null, null, null, null];
   state.resultFile = null;
+  state.driveFile = null;
   if (state.resultUrl) URL.revokeObjectURL(state.resultUrl);
   state.resultUrl = null;
+  setDriveStatus(null);
   clearCache();
   show('start');
 });
 
+/* ---------------- 드라이브 설정 (선생님용) ---------------- */
+
+const dlg = $('#settings');
+
+function updateDriveBadge() {
+  $('#drive-badge').hidden = !getDrive();
+}
+
+function setMsg(kind, text) {
+  const el = $('#set-msg');
+  el.className = `set-msg ${kind || ''}`;
+  el.textContent = text || '';
+}
+
+function formCfg() {
+  return { url: $('#set-url').value.trim(), key: $('#set-key').value.trim() };
+}
+
+function refreshSettings() {
+  const cfg = getDrive();
+  $('#set-link').hidden = !cfg;
+  $('#set-off').hidden = !cfg;
+  updateDriveBadge();
+}
+
+$('#btn-settings').addEventListener('click', () => {
+  const cfg = getDrive();
+  $('#set-url').value = cfg?.url || '';
+  $('#set-key').value = cfg?.key || '';
+  setMsg(null, cfg ? '이 기기는 드라이브에 연결되어 있어요.' : '');
+  refreshSettings();
+  dlg.showModal();
+});
+
+$('#set-close').addEventListener('click', () => dlg.close());
+
+$('#set-test').addEventListener('click', async () => {
+  const cfg = formCfg();
+  if (!isValidUrl(cfg.url)) return setMsg('fail', '주소는 https://script.google.com/macros/s/…/exec 모양이어야 해요.');
+  setMsg(null, '확인하는 중…');
+  try {
+    await ping(cfg);
+    setMsg('ok', '연결 성공! "저장"을 눌러 주세요.');
+  } catch (e) {
+    setMsg('fail', e.message);
+  }
+});
+
+$('#set-save').addEventListener('click', async () => {
+  const cfg = formCfg();
+  if (!isValidUrl(cfg.url)) return setMsg('fail', '주소는 https://script.google.com/macros/s/…/exec 모양이어야 해요.');
+  if (!cfg.key) return setMsg('fail', '비밀 코드를 입력해 주세요.');
+  if (!setDrive(cfg)) return setMsg('fail', '이 브라우저에서는 설정을 저장할 수 없어요 (개인정보 보호 모드인지 확인).');
+  refreshSettings();
+  setMsg('ok', '저장했어요. 이제 완성본이 드라이브로 자동 저장돼요.');
+});
+
+$('#set-link').addEventListener('click', async () => {
+  const cfg = getDrive();
+  if (!cfg) return;
+  const link = setupLink(cfg);
+  try {
+    await navigator.clipboard.writeText(link);
+    setMsg('ok', '연결 링크를 복사했어요. 다른 태블릿에서 이 링크를 한 번 열면 연결돼요.\n(비밀 코드가 들어 있으니 학생들에게 공유하지 마세요)');
+  } catch {
+    window.prompt('아래 링크를 복사해 다른 태블릿에서 열어 주세요', link);
+  }
+});
+
+$('#set-off').addEventListener('click', () => {
+  setDrive(null);
+  $('#set-url').value = '';
+  $('#set-key').value = '';
+  refreshSettings();
+  setMsg(null, '이 기기의 드라이브 연결을 끊었어요.');
+});
+
 /* ---------------- 시작 ---------------- */
 checkEnvironment();
+const setup = readSetupFromHash();
+if (setup?.error) showNotice(setup.error);
+else if (setup) toast('☁️ 구글 드라이브 자동 저장이 연결됐어요');
+updateDriveBadge();
 drawLogoLeaves($('#logo-leaves'));
 ensureFonts();

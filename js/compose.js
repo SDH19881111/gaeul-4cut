@@ -94,6 +94,6 @@ function drawFooter(ctx, frame, showDate, date) {
   ctx.restore();
 }
 
-export function toBlob(canvas) {
-  return new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error('toBlob 실패'))), 'image/png'));
+export function toBlob(canvas, type = 'image/png', quality) {
+  return new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error('toBlob 실패'))), type, quality));
 }

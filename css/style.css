@@ -319,6 +319,38 @@ button { font: inherit; color: inherit; }
   .result-box img { height: min(calc(100dvh - 40px), 1100px); }
 }
 
+/* ---------- 드라이브 ---------- */
+#screen-start { position: relative; }
+.settings-btn { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; font-size: 22px; opacity: .55; }
+.drive-badge { margin: 0; font-size: 14px; color: var(--brown); }
+.btn.small { font-size: 14px; padding: 8px 14px; min-height: 38px; }
+.drive-status {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;
+  font-size: 15px; color: var(--brown); text-align: center;
+}
+.drive-status.ok { color: #3f7a3a; font-weight: 600; }
+.drive-status.fail { color: var(--red); }
+.settings {
+  border: 0; border-radius: 18px; padding: 0;
+  width: min(480px, calc(100vw - 32px));
+  background: var(--paper); color: var(--ink);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+}
+.settings::backdrop { background: rgba(59, 42, 32, .45); }
+.settings-form { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 22px; }
+.settings h2 { margin: 0; font-size: 20px; }
+.settings .desc { margin: 0; font-size: 14px; line-height: 1.55; color: var(--brown); }
+.settings label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; }
+.settings input {
+  font: inherit; font-weight: 400; font-size: 15px;
+  padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: #fff; color: var(--ink);
+}
+.set-msg { margin: 0; min-height: 1.4em; font-size: 14px; line-height: 1.5; white-space: pre-line; }
+.set-msg.ok { color: #3f7a3a; }
+.set-msg.fail { color: var(--red); }
+.set-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.settings .close { position: absolute; top: 10px; right: 8px; min-height: 36px; }
+
 /* ---------- 효과 ---------- */
 .leaf-fx {
   position: fixed; inset: 0; width: 100vw; height: 100vh;

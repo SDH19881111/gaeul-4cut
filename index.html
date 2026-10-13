@@ -16,6 +16,7 @@
 <body>
   <!-- 1. 시작 -->
   <section class="screen active" id="screen-start">
+    <button type="button" class="btn ghost settings-btn" id="btn-settings" aria-label="드라이브 연결 설정">⚙️</button>
     <div class="start-wrap">
       <canvas id="logo-leaves" class="logo-leaves" width="240" height="120" aria-hidden="true"></canvas>
       <h1 class="logo">가을네컷</h1>
@@ -26,6 +27,7 @@
       </div>
       <button type="button" class="btn primary big" id="btn-start">촬영 시작</button>
       <p class="notice" id="start-notice" hidden></p>
+      <p class="drive-badge" id="drive-badge" hidden>☁️ 구글 드라이브 자동 저장 켜짐</p>
     </div>
   </section>
 
@@ -94,11 +96,39 @@
         <h2>완성! 🍁</h2>
         <button type="button" class="btn primary big" id="btn-save">저장하기</button>
         <p class="hint" id="save-hint" hidden></p>
+        <div class="drive-status" id="drive-status" hidden>
+          <span id="drive-status-text"></span>
+          <button type="button" class="btn small" id="btn-drive-retry" hidden>다시 올리기</button>
+        </div>
         <button type="button" class="btn" id="btn-deco-again">← 다시 꾸미기</button>
         <button type="button" class="btn ghost" id="btn-restart">처음부터</button>
       </div>
     </div>
   </section>
+
+  <!-- 드라이브 연결 설정 (선생님용) -->
+  <dialog class="settings" id="settings">
+    <form method="dialog" class="settings-form" id="settings-form">
+      <h2>구글 드라이브 자동 저장</h2>
+      <p class="desc">완성된 네컷이 선생님 드라이브의 <b>가을네컷/날짜</b> 폴더에 자동으로 올라가요. 설정은 이 기기에만 저장돼요.</p>
+      <label>Apps Script 웹 앱 주소
+        <input type="url" id="set-url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false">
+      </label>
+      <label>비밀 코드
+        <input type="text" id="set-key" placeholder="Apps Script의 SECRET과 똑같이" autocomplete="off" spellcheck="false">
+      </label>
+      <p class="set-msg" id="set-msg" role="status"></p>
+      <div class="set-actions">
+        <button type="button" class="btn" id="set-test">연결 테스트</button>
+        <button type="button" class="btn primary" id="set-save">저장</button>
+      </div>
+      <div class="set-actions">
+        <button type="button" class="btn small" id="set-link" hidden>다른 태블릿용 연결 링크 복사</button>
+        <button type="button" class="btn small ghost" id="set-off" hidden>이 기기 연결 끊기</button>
+      </div>
+      <button type="button" class="btn ghost close" id="set-close" aria-label="닫기">✕</button>
+    </form>
+  </dialog>
 
   <canvas id="leaf-fx" class="leaf-fx" aria-hidden="true"></canvas>
   <div class="toast" id="toast" role="status" hidden></div>
