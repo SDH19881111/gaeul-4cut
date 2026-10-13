@@ -405,11 +405,11 @@ async function enterSave() {
     : null;
   $('#result-img').src = state.resultUrl;
   btn.disabled = false;
-  btn.textContent = '저장하기';
-  if (isTouch) {
-    $('#save-hint').textContent = isIOS
-      ? '공유 창에서 "이미지 저장"을 누르면 사진첩에 들어가요.\n안 되면 사진을 길게 눌러 저장하세요.'
-      : '안 되면 사진을 길게 눌러 저장할 수도 있어요.';
+  btn.textContent = '📥 저장하기';
+  $('#btn-share').hidden = !(isTouch && navigator.canShare?.({ files: [state.resultFile] }));
+  // 아이폰·아이패드는 다운로드가 '파일' 앱으로 가므로 사진첩에 넣는 방법을 알려 준다
+  if (isIOS) {
+    $('#save-hint').textContent = '저장하기는 "파일" 앱의 다운로드 폴더로 가요.\n사진첩에 넣으려면 공유하기 → "이미지 저장"을 누르거나 사진을 길게 눌러 주세요.';
     $('#save-hint').hidden = false;
   }
   playLeaves($('#leaf-fx'));
@@ -448,28 +448,31 @@ async function sendToDrive() {
 
 $('#btn-drive-retry').addEventListener('click', sendToDrive);
 
-async function save() {
+function save() {
   const file = state.resultFile;
   if (!file) return;
-  if (isTouch && navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title: '가을네컷' });
-      return;
-    } catch (e) {
-      if (e.name === 'AbortError') return;
-      // 공유가 막히면 아래 다운로드로
-    }
-  }
   const a = document.createElement('a');
   a.href = state.resultUrl;
   a.download = file.name;
   document.body.append(a);
   a.click();
   a.remove();
-  toast(isTouch ? '저장했어요! 사진첩이나 다운로드를 확인하세요' : '저장했어요! 다운로드 폴더를 확인하세요');
+  toast(isTouch ? '저장했어요! 갤러리나 다운로드 폴더를 확인하세요' : '저장했어요! 다운로드 폴더를 확인하세요');
+}
+
+// 공유창은 버튼을 누른 그 순간에 열어야 한다 (PNG는 저장 화면에 들어올 때 미리 만들어 둠)
+async function share() {
+  const file = state.resultFile;
+  if (!file) return;
+  try {
+    await navigator.share({ files: [file], title: '가을네컷' });
+  } catch (e) {
+    if (e.name !== 'AbortError') toast('공유할 수 없어요. 저장하기를 눌러 주세요');
+  }
 }
 
 $('#btn-save').addEventListener('click', save);
+$('#btn-share').addEventListener('click', share);
 $('#btn-deco-again').addEventListener('click', () => {
   show('decorate');
   drawPreview();
