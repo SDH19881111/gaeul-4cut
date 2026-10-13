@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F4EBDD">
+  <title>가을네컷</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 1. 시작 -->
+  <section class="screen active" id="screen-start">
+    <div class="start-wrap">
+      <canvas id="logo-leaves" class="logo-leaves" width="240" height="120" aria-hidden="true"></canvas>
+      <h1 class="logo">가을네컷</h1>
+      <p class="tagline">찍고, 고르고, 저장하면 끝!</p>
+      <div class="facing-toggle" role="group" aria-label="카메라 선택">
+        <button type="button" class="seg active" data-facing="user">🤳 앞 카메라</button>
+        <button type="button" class="seg" data-facing="environment">📷 뒤 카메라</button>
+      </div>
+      <button type="button" class="btn primary big" id="btn-start">촬영 시작</button>
+      <p class="notice" id="start-notice" hidden></p>
+    </div>
+  </section>
+
+  <!-- 2. 촬영 -->
+  <section class="screen" id="screen-shoot">
+    <header class="bar">
+      <button type="button" class="btn ghost" id="btn-shoot-cancel">← 처음으로</button>
+      <span class="progress" id="shoot-progress">1 / 4</span>
+      <button type="button" class="btn ghost" id="btn-flip" title="카메라 전환">🔄 전환</button>
+    </header>
+    <div class="viewfinder" id="viewfinder">
+      <video id="video" playsinline muted autoplay></video>
+      <div class="countdown" id="countdown"></div>
+      <div class="flash" id="flash"></div>
+      <div class="cam-loading" id="cam-loading">카메라를 켜는 중…</div>
+    </div>
+    <div class="shot-strip" id="shot-strip"></div>
+    <div class="actions">
+      <button type="button" class="btn primary big" id="btn-go">찍기 시작</button>
+    </div>
+  </section>
+
+  <!-- 3. 확인 -->
+  <section class="screen" id="screen-review">
+    <header class="bar">
+      <span></span>
+      <span class="title">마음에 안 드는 컷을 눌러 주세요</span>
+      <span></span>
+    </header>
+    <div class="review-grid" id="review-grid"></div>
+    <div class="actions">
+      <button type="button" class="btn" id="btn-retake" disabled>선택한 컷 다시 찍기</button>
+      <button type="button" class="btn primary" id="btn-review-next">다음 →</button>
+    </div>
+  </section>
+
+  <!-- 4. 꾸미기 -->
+  <section class="screen" id="screen-decorate">
+    <header class="bar">
+      <button type="button" class="btn ghost" id="btn-deco-back">← 사진 다시 보기</button>
+      <span class="title">꾸미기</span>
+      <button type="button" class="btn primary" id="btn-deco-done">완성 →</button>
+    </header>
+    <div class="deco-layout">
+      <div class="deco-preview"><canvas id="preview"></canvas></div>
+      <div class="deco-panel">
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" data-tab="frames" role="tab">프레임</button>
+          <button type="button" class="tab" data-tab="filters" role="tab">필터</button>
+        </div>
+        <div class="choice-list" id="frame-list"></div>
+        <div class="choice-list" id="filter-list" hidden></div>
+        <label class="switch">
+          <input type="checkbox" id="opt-date" checked>
+          <span>날짜 스탬프 넣기</span>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 저장 -->
+  <section class="screen" id="screen-save">
+    <div class="save-wrap">
+      <div class="result-box"><img id="result-img" alt="완성된 가을네컷"></div>
+      <div class="save-side">
+        <h2>완성! 🍁</h2>
+        <button type="button" class="btn primary big" id="btn-save">저장하기</button>
+        <p class="hint" id="save-hint" hidden></p>
+        <button type="button" class="btn" id="btn-deco-again">← 다시 꾸미기</button>
+        <button type="button" class="btn ghost" id="btn-restart">처음부터</button>
+      </div>
+    </div>
+  </section>
+
+  <canvas id="leaf-fx" class="leaf-fx" aria-hidden="true"></canvas>
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

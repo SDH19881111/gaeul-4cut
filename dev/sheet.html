@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>프레임 한눈에 보기 (개발용)</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <style>
+    body { margin: 0; padding: 16px; background: #ddd; font-family: Pretendard, sans-serif; }
+    .row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+    figure { margin: 0; text-align: center; }
+    canvas { display: block; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  </style>
+</head>
+<body>
+  <p>개발용: 프레임 6종 × 필터를 한 번에 확인. 주소 뒤에 ?filter=film|amber|vintage|none</p>
+  <div class="row" id="row"></div>
+  <script type="module">
+    import { FRAMES } from '../js/frames.js';
+    import { render, ensureFonts } from '../js/compose.js';
+
+    const filterId = new URLSearchParams(location.search).get('filter') || 'none';
+    const scale = Number(new URLSearchParams(location.search).get('scale') || 0.25);
+
+    function fakeShot(i) {
+      const c = document.createElement('canvas');
+      c.width = 640; c.height = 480;
+      const ctx = c.getContext('2d');
+      const g = ctx.createLinearGradient(0, 0, 640, 480);
+      g.addColorStop(0, `hsl(${20 + i * 60},60%,65%)`);
+      g.addColorStop(1, `hsl(${80 + i * 60},45%,35%)`);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 640, 480);
+      ctx.fillStyle = '#F6D7B8';
+      ctx.beginPath(); ctx.arc(320, 250, 120, 0, 7); ctx.fill();
+      ctx.fillStyle = '#3B2A20';
+      ctx.beginPath(); ctx.arc(280, 230, 12, 0, 7); ctx.arc(360, 230, 12, 0, 7); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 60px sans-serif'; ctx.fillText(`${i + 1}`, 30, 80);
+      return { id: i + 1, canvas: c };
+    }
+
+    await ensureFonts();
+    const shots = [0, 1, 2, 3].map(fakeShot);
+    const row = document.getElementById('row');
+    for (const frame of FRAMES) {
+      const fig = document.createElement('figure');
+      const c = render(document.createElement('canvas'), { shots, frame, filterId, showDate: true, scale });
+      fig.append(c, frame.name);
+      row.append(fig);
+    }
+    document.body.dataset.ready = '1';
+  </script>
+</body>
+</html>
