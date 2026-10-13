@@ -36,7 +36,10 @@
     <header class="bar">
       <button type="button" class="btn ghost" id="btn-shoot-cancel">← 처음으로</button>
       <span class="progress" id="shoot-progress">1 / 4</span>
-      <button type="button" class="btn ghost" id="btn-flip" title="카메라 전환">🔄 전환</button>
+      <span class="bar-right">
+        <button type="button" class="btn ghost" id="btn-sound" aria-label="촬영 소리 끄기">🔊</button>
+        <button type="button" class="btn ghost" id="btn-flip" title="카메라 전환">🔄 전환</button>
+      </span>
     </header>
     <div class="viewfinder" id="viewfinder">
       <video id="video" playsinline muted autoplay></video>
@@ -54,13 +57,12 @@
   <section class="screen" id="screen-review">
     <header class="bar">
       <span></span>
-      <span class="title">마음에 안 드는 컷을 눌러 주세요</span>
+      <span class="title">다시 찍고 싶은 사진이 있나요?</span>
       <span></span>
     </header>
     <div class="review-grid" id="review-grid"></div>
     <div class="actions">
-      <button type="button" class="btn" id="btn-retake" disabled>선택한 컷 다시 찍기</button>
-      <button type="button" class="btn primary" id="btn-review-next">다음 →</button>
+      <button type="button" class="btn primary big" id="btn-review-next">이대로 좋아요! 꾸미러 가기 →</button>
     </div>
   </section>
 

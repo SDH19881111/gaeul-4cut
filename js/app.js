@@ -4,6 +4,7 @@ import { FRAMES, getFrame } from './frames.js';
 import { FILTERS } from './filters.js';
 import { render, filteredPhoto, ensureFonts, toBlob, clearCache } from './compose.js';
 import { playLeaves, drawLogoLeaves } from './effects.js';
+import { unlock, beep, shutter, isSoundOn, setSoundOn } from './sound.js';
 import { getDrive, setDrive, isValidUrl, readSetupFromHash, setupLink, ping, upload } from './drive.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -20,7 +21,6 @@ const state = {
   shots: [null, null, null, null], // { id, canvas }
   nextId: 1,
   queue: [], // 이번에 찍을 컷 번호들
-  selected: new Set(),
   frameId: 'maple',
   filterId: 'film',
   showDate: true,
@@ -184,16 +184,19 @@ function flash() {
 async function shootOne() {
   if (counting) return;
   counting = true;
+  unlock(); // iOS: 버튼을 누른 순간에 소리를 깨워 둬야 3초 뒤 셔터음이 난다
   const my = session;
   const idx = state.queue[step];
   $('#btn-go').style.visibility = 'hidden'; // 자리는 유지해서 화면이 흔들리지 않게
   $('#btn-flip').hidden = true;
   for (let n = 3; n >= 1; n--) {
     popCount(String(n));
+    beep(n === 1);
     await wait(1000);
     if (my !== session) return;
   }
   popCount('');
+  shutter();
   flash();
   state.shots[idx] = { id: state.nextId++, canvas: capture(video, state.mirror) };
   renderStrip(idx);
@@ -211,6 +214,22 @@ async function shootOne() {
 }
 
 $('#btn-go').addEventListener('click', shootOne);
+
+function updateSoundButton() {
+  const on = isSoundOn();
+  $('#btn-sound').textContent = on ? '🔊' : '🔇';
+  $('#btn-sound').setAttribute('aria-label', on ? '촬영 소리 끄기' : '촬영 소리 켜기');
+}
+updateSoundButton();
+
+$('#btn-sound').addEventListener('click', () => {
+  setSoundOn(!isSoundOn());
+  updateSoundButton();
+  if (isSoundOn()) {
+    unlock();
+    beep();
+  }
+});
 
 $('#btn-flip').addEventListener('click', () => {
   state.facing = state.facing === 'user' ? 'environment' : 'user';
@@ -243,39 +262,26 @@ document.addEventListener('visibilitychange', () => {
 /* ---------------- 3. 확인 ---------------- */
 
 function enterReview() {
-  state.selected.clear();
   const grid = $('#review-grid');
   grid.innerHTML = '';
   state.shots.forEach((shot, i) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'cut';
+    b.setAttribute('aria-label', `${i + 1}번 사진 다시 찍기`);
     const c = document.createElement('canvas');
     c.width = 480;
     c.height = 360;
     c.getContext('2d').drawImage(shot.canvas, 0, 0, 480, 360);
     b.append(c);
     b.insertAdjacentHTML('beforeend', `<span class="num">${i + 1}</span><span class="badge">↺ 다시 찍기</span>`);
-    b.addEventListener('click', () => {
-      if (state.selected.has(i)) state.selected.delete(i);
-      else state.selected.add(i);
-      b.classList.toggle('selected', state.selected.has(i));
-      updateRetakeButton();
-    });
+    // 사진을 누르면 그 컷만 바로 다시 찍으러 간다
+    b.addEventListener('click', () => enterShoot([i]));
     grid.append(b);
   });
-  updateRetakeButton();
   show('review');
 }
 
-function updateRetakeButton() {
-  const n = state.selected.size;
-  const btn = $('#btn-retake');
-  btn.disabled = n === 0;
-  btn.textContent = n ? `선택한 ${n}컷 다시 찍기` : '다시 찍을 컷을 눌러 주세요';
-}
-
-$('#btn-retake').addEventListener('click', () => enterShoot([...state.selected].sort()));
 $('#btn-review-next').addEventListener('click', enterDecorate);
 
 /* ---------------- 4. 꾸미기 ---------------- */

@@ -202,14 +202,15 @@ button { font: inherit; color: inherit; }
   text-shadow: 0 1px 6px rgba(0, 0, 0, .5);
 }
 .cut .badge {
-  position: absolute; inset: auto 0 0 0;
-  background: rgba(181, 70, 47, .92);
-  color: #fff; font-weight: 700; padding: 6px; font-size: 15px;
-  display: none;
+  position: absolute; right: 8px; bottom: 8px;
+  background: rgba(255, 255, 255, .92);
+  color: var(--red); font-weight: 700; font-size: 15px;
+  padding: 7px 12px; border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
 }
-.cut.selected { border-color: var(--red); }
-.cut.selected canvas { opacity: .55; }
-.cut.selected .badge { display: block; }
+.cut:hover, .cut:focus-visible { border-color: var(--yellow); }
+.cut:active { transform: scale(.98); }
+.bar-right { display: inline-flex; align-items: center; }
 
 /* ---------- 4. 꾸미기 ---------- */
 .deco-layout {
