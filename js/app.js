@@ -114,8 +114,25 @@ function renderStrip(nowIdx = -1) {
   });
 }
 
+let step = 0; // 이번 촬영에서 몇 번째 컷 차례인지 (state.queue의 인덱스)
+let counting = false; // 카운트다운 중에는 버튼을 다시 못 누르게
+let cameraCount = 1;
+
+// 셔터 버튼과 전환 버튼을 '기다리는 중' 상태로
+function readyForShot() {
+  const btn = $('#btn-go');
+  const idx = state.queue[step];
+  btn.textContent = isRetake() ? `📸 ${idx + 1}번 컷 다시 찍기` : `📸 ${step + 1}번째 찍기`;
+  btn.style.visibility = 'visible';
+  $('#btn-flip').hidden = cameraCount < 2;
+  setProgress(step);
+  renderStrip(idx);
+}
+
 async function openCamera() {
   const my = ++session;
+  counting = false;
+  popCount('');
   $('#cam-loading').hidden = false;
   $('#btn-go').disabled = true;
   $('#btn-flip').hidden = true;
@@ -125,8 +142,10 @@ async function openCamera() {
     state.mirror = facing === 'user';
     $('#viewfinder').classList.toggle('mirror', state.mirror);
     $('#cam-loading').hidden = true;
+    cameraCount = await countCameras();
+    if (my !== session) return;
     $('#btn-go').disabled = false;
-    $('#btn-flip').hidden = (await countCameras()) < 2;
+    readyForShot();
   } catch (e) {
     if (my !== session) return;
     stopCamera();
@@ -137,13 +156,11 @@ async function openCamera() {
 
 function enterShoot(queue) {
   state.queue = queue;
+  step = 0;
   showNotice('');
   $('#btn-shoot-cancel').textContent = isRetake() ? '← 돌아가기' : '← 처음으로';
-  $('#btn-go').hidden = false;
-  $('#btn-go').textContent = isRetake() ? '다시 찍기 시작' : '찍기 시작';
   $('#countdown').textContent = '';
-  setProgress(0);
-  renderStrip();
+  readyForShot();
   show('shoot');
   openCamera();
 }
@@ -163,32 +180,37 @@ function flash() {
   el.classList.add('on');
 }
 
-async function runSequence() {
+// 버튼을 누르면 3초 세고 한 장 찍는다. 다음 장은 다시 버튼을 눌러야 찍힘.
+async function shootOne() {
+  if (counting) return;
+  counting = true;
   const my = session;
-  $('#btn-go').hidden = true;
+  const idx = state.queue[step];
+  $('#btn-go').style.visibility = 'hidden'; // 자리는 유지해서 화면이 흔들리지 않게
   $('#btn-flip').hidden = true;
-  for (let k = 0; k < state.queue.length; k++) {
-    const idx = state.queue[k];
-    setProgress(k);
-    renderStrip(idx);
-    for (let n = 3; n >= 1; n--) {
-      popCount(String(n));
-      await wait(1000);
-      if (my !== session) return;
-    }
-    popCount('');
-    flash();
-    state.shots[idx] = { id: state.nextId++, canvas: capture(video, state.mirror) };
-    renderStrip(idx);
-    await wait(800);
+  for (let n = 3; n >= 1; n--) {
+    popCount(String(n));
+    await wait(1000);
     if (my !== session) return;
   }
-  session++;
-  stopCamera();
-  enterReview();
+  popCount('');
+  flash();
+  state.shots[idx] = { id: state.nextId++, canvas: capture(video, state.mirror) };
+  renderStrip(idx);
+  await wait(700);
+  if (my !== session) return;
+  counting = false;
+  step++;
+  if (step >= state.queue.length) {
+    session++;
+    stopCamera();
+    enterReview();
+    return;
+  }
+  readyForShot();
 }
 
-$('#btn-go').addEventListener('click', runSequence);
+$('#btn-go').addEventListener('click', shootOne);
 
 $('#btn-flip').addEventListener('click', () => {
   state.facing = state.facing === 'user' ? 'environment' : 'user';
@@ -198,21 +220,22 @@ $('#btn-flip').addEventListener('click', () => {
 
 $('#btn-shoot-cancel').addEventListener('click', () => {
   session++;
+  counting = false;
   stopCamera();
   popCount('');
   if (isRetake() && state.shots.every(Boolean)) enterReview();
   else show('start');
 });
 
-// 다른 앱으로 넘어가면 카메라를 끈다 (돌아오면 다시 켬)
+// 다른 앱으로 넘어가면 카메라를 끈다 (돌아오면 다시 켜고, 세던 컷은 다시 누르면 찍힘)
 document.addEventListener('visibilitychange', () => {
   if (!$('#screen-shoot').classList.contains('active')) return;
   if (document.hidden) {
     session++;
+    counting = false;
     stopCamera();
     popCount('');
   } else {
-    $('#btn-go').hidden = false;
     openCamera();
   }
 });
